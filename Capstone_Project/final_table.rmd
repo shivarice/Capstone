@@ -15,13 +15,14 @@ knitr::opts_chunk$set(echo = TRUE)
 library(RSQLite)
 library(tidyverse)
 library(splitstackshape)
+library(plotly)
 library(shiny)
 ```
 
 
 
 ```{r,echo=FALSE}
-extracellular_membrane_mediators_neg <- read.delim("C:/Users/lawre/Downloads/Participating Molecules [R-HSA-6784160].tsv", encoding="UCS-2")
+
 
 plasma_membrane_mediators_neg <- read.delim("C:/Users/lawre/Downloads/Participating Molecules [R-HSA-6784160] (1).tsv")
 
@@ -154,24 +155,26 @@ merged.table.split.corrected$hallmark<-ifelse(merged.table.split.corrected$hallm
 merged.table.split.corrected$hallmark<-ifelse(merged.table.split.corrected$hallmark=='sustaining proliferative signaling',3,merged.table.split.corrected$hallmark)
 merged.table.split.corrected$hallmark<-factor(merged.table.split.corrected$hallmark)
 
-
+#final product
 col.plot<-c('white','black')
-x1<-ggplot(data=merged.table.split.corrected, aes(x=herbal_ingredients,pathwayname,fill=isthere,text=paste("hallmark: ",hallmark,"<br>","pathwayID: ",pathwayid)))+theme_bw()+geom_tile(color='gray',size=0.25)+labs(x='',y='')+theme(axis.text.x = element_text(angle = 20, hjust = 1, size=9))+ coord_fixed()+scale_y_discrete(expand=c(0,0))+scale_fill_manual(values=col.plot)
-hallmarks<-c('inflammation','angiogenesis','sustaining proliferative signaling')
+x3<-ggplot(data=merged.table.split.corrected, aes(x=herbal_ingredients,pathwayname,fill=isthere,text=paste("hallmark: ",hallmark,"<br>","pathwayID: ",pathwayid)))+theme_bw()+geom_tile(color='gray',size=0.25)+labs(x='',y='')+theme(axis.text.x = element_text(angle = 20, hjust = 1, size=9))+scale_fill_manual(values=col.plot)
+plotly::ggplotly(x3, width=1000,height=1600)
+```
 
-x2<-ggplot(data=merged.table.split.corrected,aes(pathwayname,hallmark,fill=hallmark))+geom_tile(color='gray')+theme(axis.text.y = element_blank())+scale_x_discrete(labels=hallmarks)
-plotlyplot<-plotly::ggplotly(x1, width=1000, height=1000)
-plotlyplot2<-plotly::ggplotly(x2, width=1000, height=1600)
-plotlyplot
-# fig=tools.make_subplots(rows=1, cols=2)
-# merged.table.split.corrected$isthere<-as.numeric(merged.table.split.corrected$isthere)
-# heatmaply(merged.table.split.corrected,Rowv=NULL,Colv="Rowv")
-# 
-# test4<-merged.table.split.corrected[c('pathwayname','hallmark','isthere','herbal_ingredients')]
-# test5<-merged.table.split.corrected%>%spread(herbal_ingredients,isthere)
-# test5$hallmark<-ifelse(test5$hallmark=='sustaining proliferative signaling',4,test5$hallmark)
-# test5$hallmark<-ifelse(test5$hallmark=='inflammation',5,test5$hallmark)
-# test5$hallmark<-ifelse(test5$hallmark=='angiogenesis',6,test5$hallmark)
+```{r}
+#shiny App
+ui<-fluidPage(
+  plotlyOutput("plot"),
+  verbatimTextOutput("event")
+)
+server<-function(input,output){
+  output$plot<-renderPlotly({plotly::ggplotly(x3, width=1000,height=1600)
+})
+  output$event<-renderPrint({
+    d<-event_data("plotly_hover")
+    if (is.null(d)) "Hover on a point!" else d
+  })
+}
 
-
+shinyApp(ui,server)
 ```
